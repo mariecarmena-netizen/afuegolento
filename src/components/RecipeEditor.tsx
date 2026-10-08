@@ -47,7 +47,7 @@ export default function RecipeEditor({ initial, onSave, onBack }: { initial: Rec
           {recipe.photos.length < 4 && <label className={`photo-upload ${uploading ? 'disabled' : ''}`}>{uploading ? <LoaderCircle className="spin" size={26} /> : recipe.photos.length ? <ImagePlus size={26} /> : <Camera size={28} />}<span>{uploading ? 'Preparando fotos…' : 'Añadir fotos'}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" multiple onChange={upload} disabled={uploading} /></label>}
         </div>
       </section>
-      <section className="editor-section"><div className="section-heading"><h2>Ingredientes</h2><button type="button" className="button small subtle" onClick={() => update('ingredients', [...recipe.ingredients, newIngredient()])} disabled={recipe.ingredients.length >= 100}><Plus size={17} />Añadir</button></div>
+      <section className="editor-section"><div className="section-heading"><h2>Ingredientes</h2></div>
         {!!recipe.ingredients.length && <div className="ingredient-head"><span>Cantidad</span><span>Unidad</span><span>Ingrediente</span></div>}
         <div className="ingredient-inputs">{recipe.ingredients.map((ingredient, index) => <div className="ingredient-input-row" key={ingredient.id}>
           <input aria-label={`Cantidad del ingrediente ${index + 1}`} value={ingredient.quantity} maxLength={30} placeholder="200" onChange={e => update('ingredients', recipe.ingredients.map((i, n) => n === index ? { ...i, quantity: e.target.value } : i))} />
@@ -55,9 +55,11 @@ export default function RecipeEditor({ initial, onSave, onBack }: { initial: Rec
           <input aria-label={`Nombre del ingrediente ${index + 1}`} value={ingredient.name} maxLength={300} placeholder="Harina, tomate, un poco de sal…" onChange={e => update('ingredients', recipe.ingredients.map((i, n) => n === index ? { ...i, name: e.target.value } : i))} />
           <button className="icon-button muted" type="button" title={`Eliminar ingrediente ${index + 1}`} aria-label={`Eliminar ingrediente ${index + 1}`} onClick={() => update('ingredients', recipe.ingredients.filter((_, n) => n !== index))}><Trash2 size={17} /></button>
         </div>)}</div><datalist id="units">{['g', 'kg', 'ml', 'l', 'ud.', 'cda.', 'cdta.', 'tazas', 'dientes', 'pizcas'].map(u => <option key={u} value={u} />)}</datalist>
+        <button type="button" className="button small subtle editor-add-button" onClick={() => update('ingredients', [...recipe.ingredients, newIngredient()])} disabled={recipe.ingredients.length >= 100}><Plus size={17} />Añadir</button>
       </section>
-      <section className="editor-section"><div className="section-heading"><h2>Preparación</h2><button type="button" className="button small subtle" onClick={() => update('steps', [...recipe.steps, ''])} disabled={recipe.steps.length >= 100}><Plus size={17} />Añadir paso</button></div>
+      <section className="editor-section"><div className="section-heading"><h2>Preparación</h2></div>
         <div className="steps-editor">{recipe.steps.map((step, index) => <div className="step-editor" key={index}><span className="step-number">{String(index + 1).padStart(2, '0')}</span><textarea aria-label={`Paso ${index + 1}`} rows={3} maxLength={10000} value={step} placeholder={index === 0 ? 'Empieza por el primer paso…' : '¿Qué viene después?'} onChange={e => update('steps', recipe.steps.map((s, n) => n === index ? e.target.value : s))} /><button type="button" className="icon-button muted" title={`Eliminar paso ${index + 1}`} aria-label={`Eliminar paso ${index + 1}`} onClick={() => update('steps', recipe.steps.filter((_, n) => n !== index))}><Trash2 size={17} /></button></div>)}</div>
+        <button type="button" className="button small subtle editor-add-button" onClick={() => update('steps', [...recipe.steps, ''])} disabled={recipe.steps.length >= 100}><Plus size={17} />Añadir paso</button>
       </section>
       <section className="editor-section"><h2>Notas de cocina</h2><label className="sr-only" htmlFor="recipe-notes">Notas de cocina</label><textarea id="recipe-notes" rows={3} maxLength={10000} value={recipe.notes} onChange={e => update('notes', e.target.value)} placeholder="Ese truco, la versión de la abuela, lo que cambiarías la próxima vez…" /></section>
       {error && <p className="error" role="alert">{error}</p>}
