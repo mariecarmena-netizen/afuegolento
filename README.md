@@ -6,7 +6,7 @@ Recetario personal en español, pensado para móvil. Cada receta tiene fotos, in
 
 La app funciona sin configurar ningún servicio: crea un libro con una clave y guarda las recetas y fotos en IndexedDB, en este dispositivo. No hay recetas de ejemplo guardadas automáticamente.
 
-La sincronización entre dispositivos está implementada, pero **necesita conectar Supabase y desplegar el servidor en Vercel**. Sin esa configuración, la app indica que la sincronización está pendiente. Introducir la clave en un dispositivo nuevo no recupera las recetas hasta que el libro original se haya sincronizado.
+La sincronización entre dispositivos funciona con **Neon o Supabase y el servidor en Vercel**. Sin esa configuración, la app indica que la sincronización está pendiente. Introducir la clave en un dispositivo nuevo recupera las recetas después de que el libro original se haya sincronizado.
 
 ## Ejecutar en el ordenador
 
@@ -34,9 +34,30 @@ git commit -m "Crear A fuego lento"
 git push -u origin main
 ```
 
-`.env`, dependencias, compilaciones y archivos de Vercel se excluyen de Git. No subas claves de Supabase ni copias de tus recetas al repositorio.
+`.env`, dependencias, compilaciones y archivos de Vercel se excluyen de Git. No subas conexiones de Neon, claves de Supabase ni copias de tus recetas al repositorio.
 
-## Activar la sincronización
+## Activar la sincronización con Neon
+
+1. En tu proyecto de Vercel abre **Storage → Neon** y comprueba que la base de datos esté conectada al proyecto `afuegolento` en **Production**. La integración proporciona `DATABASE_URL`; la app también admite `POSTGRES_URL` y `POSTGRES_PRISMA_URL`. No pongas el prefijo `VITE_` a ninguna de ellas.
+2. En **Query** de la integración de Vercel o en **SQL Editor** de Neon ejecuta [`neon/schema.sql`](neon/schema.sql). Crea las tablas y la función que controla las versiones. Puedes repetirlo sin borrar recetas.
+3. Despliega la versión actual de la app. Si acabas de conectar Neon o cambiar variables de entorno, vuelve a desplegar para aplicarlas.
+4. Abre la app en el dispositivo donde ya están tus recetas. En **Mi libro → Sincronizar ahora**, espera a ver **Libro sincronizado**. Se sube tu libro existente con su misma clave y sus fotos.
+5. En el otro dispositivo abre **la misma dirección** de la app, elige **Abrir mi libro** e introduce esa clave. Se descargarán las recetas y fotos. Los cambios se sincronizan al guardar, al volver a la app y cada 15 segundos mientras está visible.
+
+Para usar Neon localmente, crea `.env` a partir de `.env.example`, copia `DATABASE_URL` y ejecuta:
+
+```sh
+pnpm db:setup
+pnpm dev
+```
+
+`pnpm db:setup` prepara el esquema en una transacción y conserva los datos existentes. El servidor local atiende las mismas rutas `/api` que Vercel. `/api/health` comprueba que la base de datos responde y que el esquema está preparado; los errores de sincronización aparecen en **Mi libro**.
+
+La conexión con Neon se realiza solo en el servidor mediante el [controlador oficial](https://github.com/neondatabase/serverless), con consultas parametrizadas. La contraseña no se incluye en el JavaScript que recibe el navegador. Las fotos forman parte del contenido cifrado de cada receta; no hace falta un servicio de archivos aparte.
+
+## Alternativa: sincronización con Supabase
+
+Si usas Neon, puedes omitir esta sección. Si ya tenías un libro sincronizado en Supabase, mantén ese servicio hasta trasladar el libro con una copia de seguridad: cambiar de base de datos no copia automáticamente los datos remotos.
 
 1. Crea una cuenta en [Supabase](https://supabase.com/) y un proyecto. Elige una región próxima a tus dispositivos y guarda la contraseña del proyecto.
 2. Abre **SQL Editor**, crea una consulta y ejecuta todo el contenido de [`supabase/schema.sql`](supabase/schema.sql). Se crearán las tablas y la función para guardar recetas evitando sobrescrituras entre dispositivos.
@@ -59,7 +80,7 @@ Tras la primera carga, la versión desplegada guarda los archivos de la app para
 
 La clave del libro es el acceso al libro: cualquiera que la tenga puede abrirlo. Tiene 120 bits aleatorios y no hay cuenta, correo ni recuperación de clave. Guárdala fuera del navegador. Las recetas y las fotos se cifran con AES-GCM antes de enviarse; las tablas guardan contenidos cifrados y el identificador del libro es un hash de la clave. El servidor recibe la clave por HTTPS para autorizar las peticiones, pero no la guarda en la base de datos ni la incluye en las URLs.
 
-Las tablas tienen RLS activado y no permiten acceso directo mediante claves públicas. El servidor accede con `service_role`. Las peticiones sin una clave válida se rechazan.
+En Neon el servidor accede con el propietario de la base de datos y se revocan los permisos del rol público sobre las tablas y la función. En Supabase las tablas tienen RLS activado y el servidor accede con `service_role`. Las peticiones sin una clave válida se rechazan y todas las consultas de recetas se restringen al hash del libro autorizado.
 
 Si dos dispositivos editan la misma receta, se conserva la versión remota y la versión local como otra receta con «(copia local)» en el título. Las eliminaciones se guardan como marcas para que otro dispositivo sin conexión no vuelva a añadir inadvertidamente recetas borradas.
 
@@ -73,8 +94,10 @@ El almacenamiento está asociado a cada dominio. Si creas recetas en `localhost`
 
 - `src/`: interfaz React, IndexedDB, tratamiento de fotos, cifrado y sincronización.
 - `api/`: funciones de Vercel para el libro, las recetas y el estado de la conexión.
-- `server/`: autorización y acceso a Supabase; estas claves nunca se incluyen en el cliente.
+- `server/`: autorización y acceso a Neon o Supabase; estas claves nunca se incluyen en el cliente.
+- `neon/schema.sql`: esquema para Neon y guardado con control de versiones.
+- `scripts/setup-neon.mjs`: preparación del esquema de Neon desde `.env`.
 - `supabase/schema.sql`: esquema y guardado con control de versiones.
 - `public/icons/`: logo y tamaños de instalación; [prompt del logo](docs/LOGO.md).
 
-La activación de Supabase y una comprobación real entre dos dispositivos quedan pendientes hasta que se configure el servicio. No hace falta una API de inteligencia artificial para usar esta app.
+No hace falta una API de inteligencia artificial para usar esta app.

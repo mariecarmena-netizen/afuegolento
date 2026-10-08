@@ -114,4 +114,10 @@ describe('Sincronización', () => {
     await expect(openCloudBook(code)).rejects.toThrow('No existe');
     expect(fetchMock.mock.calls[0][1].method).toBe('GET');
   });
+  it('explica un fallo del servidor que devuelve HTML y conserva las recetas locales', async () => {
+    const code = createBookCode(); const r = recipe(); await saveLocal(code, r);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<html>Error del servidor</html>', { status: 500 })));
+    await expect(syncBook({ code, name: 'Mi libro', createdAt: new Date().toISOString() })).rejects.toThrow('servidor de sincronización');
+    expect((await getEntry(code, r.id))?.pending).toBe(true);
+  });
 });

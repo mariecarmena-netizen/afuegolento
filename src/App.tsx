@@ -46,7 +46,7 @@ export default function App() {
     synchronizing.current = true;
     try {
       if (!navigator.onLine) { setStatus('offline'); return; }
-      if (!await cloudConfigured()) { setStatus('local'); return; }
+      if (!await cloudConfigured()) { setStatus('local'); setSyncError(''); return; }
       setStatus('syncing');
       const result = await syncBook(current);
       if (activeBook.current?.code === current.code) {
@@ -72,10 +72,10 @@ export default function App() {
     const onOnline = () => { void synchronize(); };
     const onOffline = () => setStatus('offline');
     const onFocus = () => { if (document.visibilityState === 'visible') void synchronize(); };
-    const interval = window.setInterval(() => { if (document.visibilityState === 'visible' && status !== 'local') void synchronize(); }, 15000);
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void synchronize(); }, 15000);
     window.addEventListener('online', onOnline); window.addEventListener('offline', onOffline); window.addEventListener('focus', onFocus); document.addEventListener('visibilitychange', onFocus);
     return () => { window.clearInterval(interval); window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
-  }, [book, synchronize, status === 'local']);
+  }, [book, synchronize]);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(null), toast.undo ? 10000 : 6000); return () => window.clearTimeout(timer); }, [toast]);
   useEffect(() => {
     const handler = (event: Event) => { event.preventDefault(); setInstallPrompt(event as InstallPrompt); };
@@ -123,7 +123,7 @@ export default function App() {
       </main>
     </div>
     {view !== 'editor' && <nav className="mobile-nav" aria-label="Navegación móvil"><button className={!favorites ? 'active' : ''} onClick={() => goLibrary()}><BookOpen size={21} /><span>Recetas</span></button><button className="mobile-add" onClick={() => createRecipe()} title="Nueva receta" aria-label="Nueva receta"><Plus size={24} /></button><button className={favorites ? 'active' : ''} onClick={() => goLibrary(true)}><Heart size={21} /><span>Favoritas</span></button></nav>}
-    {settings && <BookSettings book={book} recipes={recipes} status={status} created={settings === 'created'} onClose={() => setSettings(false)} installPrompt={installPrompt} onImport={async values => { await importRecipes(book.code, values); await refreshRecipes(book); setView('library'); setToast({ text: `${values.length} recetas restauradas` }); void synchronize(); }} onLeave={async () => { await leaveBook(); activeBook.current = null; setBookState(null); setSettings(false); setRecipes([]); }} />}
+    {settings && <BookSettings book={book} recipes={recipes} status={status} syncError={syncError} onSync={() => { void synchronize(); }} created={settings === 'created'} onClose={() => setSettings(false)} installPrompt={installPrompt} onImport={async values => { await importRecipes(book.code, values); await refreshRecipes(book); setView('library'); setToast({ text: `${values.length} recetas restauradas` }); void synchronize(); }} onLeave={async () => { await leaveBook(); activeBook.current = null; setBookState(null); setSettings(false); setRecipes([]); }} />}
     {deleteRecipe && <Modal title="Eliminar receta" onClose={() => setDeleteRecipe(null)}><div className="confirm-body"><p>¿Quieres eliminar «{deleteRecipe.title}» de tu libro?</p></div><div className="modal-footer"><button className="button" onClick={() => setDeleteRecipe(null)}>Cancelar</button><button className="button danger" onClick={() => { void remove(deleteRecipe); }}><Trash2 size={16} />Eliminar receta</button></div></Modal>}
     {(toast || needRefresh) && <div className="toast" role="status"><Check size={18} /><span>{toast?.text ?? 'Hay una nueva versión disponible.'}</span>{toast?.undo && <button onClick={async () => { const value = toast.undo!; if (book) { try { await saveLocal(book.code, { ...value, updatedAt: new Date().toISOString() }); await refreshRecipes(book); setToast({ text: 'Receta recuperada' }); void synchronize(); } catch { setToast({ text: 'No se ha podido recuperar la receta.' }); } } }}>Deshacer</button>}{needRefresh && !toast && <button disabled={view === 'editor'} title={view === 'editor' ? 'Guarda los cambios antes de actualizar' : 'Actualizar aplicación'} onClick={() => { void updateServiceWorker(true); }}>Actualizar</button>}<button className="icon-button" title="Cerrar aviso" aria-label="Cerrar aviso" onClick={() => { setToast(null); setNeedRefresh(false); }}><X size={16} /></button></div>}
   </div>;

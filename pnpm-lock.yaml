@@ -14,6 +14,9 @@ importers:
       '@fontsource/lora':
         specifier: ^5.2.6
         version: 5.3.0
+      '@neondatabase/serverless':
+        specifier: ^1.2.0
+        version: 1.2.0
       idb:
         specifier: ^8.0.3
         version: 8.0.3
@@ -776,6 +779,10 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [glibc]
+
+  '@neondatabase/serverless@1.2.0':
+    resolution: {integrity: sha512-tnaqgixUengZQNd9ZrS3ytQfamJzLKY8QxgqWQTNHHtB+KrFQWk77JTbbpg4RD+J3qE4eO2lVytvGDX5Kj6FdQ==}
+    engines: {node: '>=19.0.0'}
 
   '@rolldown/pluginutils@1.0.0-beta.27':
     resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
@@ -2902,6 +2909,8 @@ snapshots:
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true
+
+  '@neondatabase/serverless@1.2.0': {}
 
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 

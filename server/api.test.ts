@@ -21,11 +21,13 @@ describe('API de Vercel', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
   it('informa de configuración pendiente sin revelar variables del servidor', async () => {
+    vi.stubEnv('DATABASE_URL', ''); vi.stubEnv('POSTGRES_URL', ''); vi.stubEnv('POSTGRES_PRISMA_URL', '');
     vi.stubEnv('SUPABASE_URL', ''); vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
     expect(await call(healthHandler, 'GET')).toEqual({ status: 200, data: { configured: false } });
     expect((await call(bookHandler, 'GET', undefined, createBookCode())).status).toBe(503);
   });
   it('solo expone un hash del libro a Supabase y controla conflictos al guardar', async () => {
+    vi.stubEnv('DATABASE_URL', ''); vi.stubEnv('POSTGRES_URL', ''); vi.stubEnv('POSTGRES_PRISMA_URL', '');
     const code = createBookCode(); vi.stubEnv('SUPABASE_URL', 'https://database.test'); vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-server-secret');
     const fetchMock = vi.fn(async (url: string) => Response.json(url.includes('rpc/save_recipe') ? { conflict: true } : [{ id: 'book' }]));
     vi.stubGlobal('fetch', fetchMock);

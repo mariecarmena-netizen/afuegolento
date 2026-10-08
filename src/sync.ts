@@ -12,7 +12,9 @@ async function request<T>(path: string, code?: string, body?: unknown): Promise<
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     cache: 'no-store', signal: AbortSignal.timeout(20000),
   });
-  const data = await response.json();
+  let data: { error?: string };
+  try { data = await response.json(); }
+  catch { throw new ApiError(response.status || 502, 'El servidor de sincronización no responde correctamente. Tus recetas siguen guardadas en este dispositivo.'); }
   if (!response.ok) throw new ApiError(response.status, data.error ?? 'No se ha podido sincronizar el libro.');
   return data as T;
 }

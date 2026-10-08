@@ -1,4 +1,4 @@
-import { HttpError } from './http';
+import { HttpError } from './http.js';
 
 export function configured(): boolean { return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY); }
 export async function database<T>(path: string, init: RequestInit = {}): Promise<T> {

@@ -3,12 +3,12 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 function configureLocalAPI(server: { middlewares: Connect.Server }, mode: string) {
-  const env = loadEnv(mode, process.cwd(), 'SUPABASE_');
-  for (const key of ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']) if (env[key]) process.env[key] = env[key];
+  const env = loadEnv(mode, process.cwd(), ['SUPABASE_', 'DATABASE_URL', 'POSTGRES_']);
+  for (const key of ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'DATABASE_URL', 'POSTGRES_URL', 'POSTGRES_PRISMA_URL']) if (env[key]) process.env[key] = env[key];
   server.middlewares.use(async (req, res, next) => {
           const path = req.url?.split('?')[0];
           try {
-            if (path === '/api/health') { const { default: handler } = await import('./api/health'); handler(req, res); }
+            if (path === '/api/health') { const { default: handler } = await import('./api/health'); await handler(req, res); }
             else if (path === '/api/book') { const { default: handler } = await import('./api/book'); await handler(req, res); }
             else if (path === '/api/recipes') { const { default: handler } = await import('./api/recipes'); await handler(req, res); }
             else next();
