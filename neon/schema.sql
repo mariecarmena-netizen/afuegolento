@@ -1,4 +1,7 @@
 -- Ejecutar en SQL Editor de Neon o con pnpm db:setup. Es seguro repetirlo.
+-- Un único bloque permite ejecutarlo también en Query de Vercel, de forma atómica.
+do $setup$
+begin
 create table if not exists public.recipe_books (
   id text primary key check (id ~ '^[a-f0-9]{64}$'),
   payload text not null check (octet_length(payload) <= 3000),
@@ -26,7 +29,7 @@ create or replace function public.save_recipe(
 ) returns jsonb
 language plpgsql
 set search_path = public
-as $$
+as $recipe$
 declare saved_revision bigint;
 begin
   if p_expected_revision = 0 then
@@ -43,5 +46,7 @@ begin
   if saved_revision is null then return jsonb_build_object('conflict', true); end if;
   return jsonb_build_object('conflict', false, 'revision', saved_revision);
 end;
-$$;
+$recipe$;
 revoke all on function public.save_recipe(text, text, text, bigint, boolean) from public;
+end;
+$setup$;
